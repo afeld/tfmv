@@ -10,19 +10,21 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func getPlan(file string) (*tfmt.Plan, error) {
+func getPlan(file string) (fmtPlan *tfmt.Plan, err error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+	}()
 
 	// Terraform has two Plan types, for some reason. `terraform.Plan` doesn't include the module in the address, so only use it for reading from the plan file, then convert it to the other one.
 	plan, err := terraform.ReadPlan(f)
 	if err != nil {
 		return nil, err
 	}
-	fmtPlan := tfmt.NewPlan(plan)
+	fmtPlan = tfmt.NewPlan(plan)
 	return fmtPlan, nil
 }
 
