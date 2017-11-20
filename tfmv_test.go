@@ -19,6 +19,18 @@ func fileExists(path string) bool {
 	return true
 }
 
+func moveFile(filename, srcDir, destDir string) error {
+	src, err := filepath.Abs(srcDir + filename)
+	if err != nil {
+		return err
+	}
+	dest, err := filepath.Abs(destDir + filename)
+	if err != nil {
+		return err
+	}
+	return os.Rename(src, dest)
+}
+
 func removeFile(filename string) error {
 	path, err := filepath.Abs(filename)
 	if err != nil {
@@ -151,16 +163,13 @@ func TestChangesAfterApplyAndMove(t *testing.T) {
 	mustRun(t, "terraform", "apply", "-auto-approve", rootModule)
 
 	filename := "tls.tf"
-	src, err := filepath.Abs(rootModule + filename)
-	assert.NoError(t, err)
-	dest, err := filepath.Abs("test/empty/" + filename)
-	assert.NoError(t, err)
-	err = os.Rename(src, dest)
+	destModule := "test/empty/"
+	err := moveFile(filename, rootModule, destModule)
 	assert.NoError(t, err)
 
 	// move the file back
 	defer func() {
-		err = os.Rename(dest, src)
+		err = moveFile(filename, destModule, rootModule)
 		assert.NoError(t, err)
 	}()
 
