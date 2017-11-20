@@ -65,19 +65,39 @@ func TestEmptyPlan(t *testing.T) {
 }
 
 func TestSimplePlan(t *testing.T) {
-	plan := getTestPlan(t, "test")
+	plan := getTestPlan(t, "test/simple")
 	assert.False(t, plan.Diff.Empty())
 	assert.Len(t, plan.Diff.Modules, 1)
 }
 
-func TestChangesByType(t *testing.T) {
-	plan := getTestPlan(t, "test")
+func TestChangesByType_Simple(t *testing.T) {
+	plan := getTestPlan(t, "test/simple")
 
 	changesByType, err := getChangesByType(plan)
-
 	assert.NoError(t, err)
-	assert.Equal(t, changesByType.GetTypes(), []ResourceType{"local_file"})
+
+	types := changesByType.GetTypes()
+	assert.Equal(t, types, []ResourceType{"local_file"})
+
 	changes := changesByType.Get("local_file")
+	assert.Len(t, changes.Created, 1)
+	assert.Len(t, changes.Destroyed, 0)
+}
+
+func TestChangesByType_Multi(t *testing.T) {
+	plan := getTestPlan(t, "test/multi")
+
+	changesByType, err := getChangesByType(plan)
+	assert.NoError(t, err)
+
+	types := changesByType.GetTypes()
+	assert.Len(t, types, 2)
+
+	changes := changesByType.Get("local_file")
+	assert.Len(t, changes.Created, 1)
+	assert.Len(t, changes.Destroyed, 0)
+
+	changes = changesByType.Get("tls_private_key")
 	assert.Len(t, changes.Created, 1)
 	assert.Len(t, changes.Destroyed, 0)
 }
