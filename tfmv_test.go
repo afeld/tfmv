@@ -66,8 +66,9 @@ func TestSimplePlan(t *testing.T) {
 func TestChangesByType(t *testing.T) {
 	plan := getTestPlan(t)
 
-	changesByType := getChangesByType(plan)
+	changesByType, err := getChangesByType(plan)
 
+	assert.NoError(t, err)
 	assert.Equal(t, changesByType.GetTypes(), []ResourceType{"local_file"})
 	changes := changesByType.Get("local_file")
 	assert.Len(t, changes.Created, 1)

@@ -4,13 +4,6 @@ import "github.com/hashicorp/terraform/terraform"
 
 type ResourceType string
 
-type ResourcePath string
-
-func (r ResourcePath) GetType() ResourceType {
-	parts := terraform.ParseResourcePath(string(r))
-	return ResourceType(parts[0])
-}
-
 type ResourceChanges struct {
 	Created   []*terraform.InstanceDiff
 	Destroyed []*terraform.InstanceDiff
