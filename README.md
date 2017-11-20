@@ -12,6 +12,7 @@ resource "aws_instance" "app" {
 If you change the resource name:
 
 ```hcl
+// "app" --> "webapp"
 resource "aws_instance" "webapp" {
   // ...
 }
@@ -33,7 +34,7 @@ the [resource address](https://www.terraform.io/docs/internals/resource-addressi
 In order:
 
 1. Improve algorithm for resource matching.
-    * Currently it's just matching created resources with destroyed ones of the same type, in the order it comes across them.
+    * Currently it's just matching created resources with destroyed ones of the same type, in the order it comes across them. It could be better at guessing created/destroyed resources that are likely meant to be the same.
 1. Gain enough confidence in its functionality that it can be used in deployment pipelines, where it's hard to do `state mv` by hand.
 1. Propose merging into Terraform core.
 
