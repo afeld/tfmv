@@ -21,33 +21,33 @@ func mustRun(t *testing.T, name string, arg ...string) {
 	}
 }
 
-func testModulePath(t *testing.T) string {
-	module, err := filepath.Abs("test")
+func testModulePath(t *testing.T, modulePath string) string {
+	module, err := filepath.Abs(modulePath)
 	assert.NoError(t, err)
 	return module
 }
 
-func initModule(t *testing.T) {
-	module := testModulePath(t)
+func initModule(t *testing.T, modulePath string) {
+	module := testModulePath(t, modulePath)
 	mustRun(t, "terraform", "init", module)
 }
 
-func generatePlan(t *testing.T) string {
+func generatePlan(t *testing.T, modulePath string) string {
 	planFile, err := ioutil.TempFile("", "terraform-plan")
 	assert.NoError(t, err)
 	err = planFile.Close()
 	assert.NoError(t, err)
 
-	module := testModulePath(t)
+	module := testModulePath(t, modulePath)
 
 	planPath := planFile.Name()
 	mustRun(t, "terraform", "plan", "-out="+planPath, module)
 	return planPath
 }
 
-func getTestPlan(t *testing.T) *terraform.Plan {
-	initModule(t)
-	planPath := generatePlan(t)
+func getTestPlan(t *testing.T, modulePath string) *terraform.Plan {
+	initModule(t, modulePath)
+	planPath := generatePlan(t, modulePath)
 	plan, err := getPlan(planPath)
 	assert.NoError(t, err)
 	return plan
@@ -58,13 +58,20 @@ func TestMissingPlan(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestEmptyPlan(t *testing.T) {
+	plan := getTestPlan(t, "test/empty")
+	assert.True(t, plan.Diff.Empty())
+	assert.Len(t, plan.Diff.Modules, 1)
+}
+
 func TestSimplePlan(t *testing.T) {
-	plan := getTestPlan(t)
+	plan := getTestPlan(t, "test")
+	assert.False(t, plan.Diff.Empty())
 	assert.Len(t, plan.Diff.Modules, 1)
 }
 
 func TestChangesByType(t *testing.T) {
-	plan := getTestPlan(t)
+	plan := getTestPlan(t, "test")
 
 	changesByType, err := getChangesByType(plan)
 
