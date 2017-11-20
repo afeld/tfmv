@@ -167,8 +167,8 @@ func TestChangesAfterApplyAndMove(t *testing.T) {
 	err := moveFile(filename, rootModule, destModule)
 	assert.NoError(t, err)
 
-	// move the file back
 	defer func() {
+		// move the file back
 		err = moveFile(filename, destModule, rootModule)
 		assert.NoError(t, err)
 	}()
@@ -183,4 +183,32 @@ func TestChangesAfterApplyAndMove(t *testing.T) {
 	changes := changesByType.Get("tls_private_key")
 	assert.Len(t, changes.Created, 1)
 	assert.Len(t, changes.Destroyed, 1)
+}
+
+func TestMoveStatements_Simple(t *testing.T) {
+	plan := getTestPlan(t, "test/simple")
+	moves, err := getMoveStatements(plan)
+	assert.NoError(t, err)
+	assert.Empty(t, moves)
+}
+
+func TestMoveStatements_ApplyAndMove(t *testing.T) {
+	rootModule := "test/module_ref/"
+	mustRun(t, "terraform", "apply", "-auto-approve", rootModule)
+
+	filename := "tls.tf"
+	destModule := "test/empty/"
+	err := moveFile(filename, rootModule, destModule)
+	assert.NoError(t, err)
+
+	defer func() {
+		// move the file back
+		err = moveFile(filename, destModule, rootModule)
+		assert.NoError(t, err)
+	}()
+
+	plan := getTestPlan(t, rootModule)
+	moves, err := getMoveStatements(plan)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"terraform state mv tls_private_key.example module.empty.tls_private_key.example"}, moves)
 }
