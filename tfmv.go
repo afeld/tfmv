@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 
 	tfmt "github.com/hashicorp/terraform/command/format"
 	"github.com/hashicorp/terraform/terraform"
@@ -39,9 +40,49 @@ func getChangesByType(plan *tfmt.Plan) (ChangesByType, error) {
 	return changesByType, nil
 }
 
+func checkIfObjectsMatch(name string, creation, deletion interface{}) error {
+	if reflect.DeepEqual(creation, deletion) {
+		err := fmt.Errorf(name+" match, which they shouldn't:\ncreation: %+v\ndeletion:%+v\n", creation, deletion)
+		return err
+	}
+	return nil
+}
+
 func getMoveStatements(plan *tfmt.Plan) ([]string, error) {
-	// TODO implement
-	return []string{}, nil
+	moves := []string{}
+
+	changesByType, err := getChangesByType(plan)
+	if err != nil {
+		return moves, err
+	}
+
+	for _, changes := range changesByType {
+		for i, creation := range changes.Created {
+			// stop if we're out of matches
+			if i == len(changes.Destroyed) {
+				break
+			}
+
+			deletion := changes.Destroyed[i]
+			// sanity checks
+			if err := checkIfObjectsMatch("ResourceDiffs", creation, deletion); err != nil {
+				return moves, err
+			}
+			if err := checkIfObjectsMatch("Addrs", creation.Addr, deletion.Addr); err != nil {
+				return moves, err
+			}
+			if err := checkIfObjectsMatch("Diffs", creation.Diff, deletion.Diff); err != nil {
+				return moves, err
+			}
+			if err := checkIfObjectsMatch("Strings", creation.String(), deletion.String()); err != nil {
+				return moves, err
+			}
+
+			moves = append(moves, "terraform state mv "+deletion.String()+" "+creation.String())
+		}
+	}
+
+	return moves, nil
 }
 
 func main() {
