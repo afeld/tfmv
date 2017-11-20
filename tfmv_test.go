@@ -22,7 +22,7 @@ func mustRun(t *testing.T, name string, arg ...string) {
 
 func testModulePath(t *testing.T) string {
 	module, err := filepath.Abs("test")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	return module
 }
 
@@ -31,11 +31,11 @@ func initModule(t *testing.T) {
 	mustRun(t, "terraform", "init", module)
 }
 
-func plan(t *testing.T) string {
+func generatePlan(t *testing.T) string {
 	planFile, err := ioutil.TempFile("", "terraform-plan")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	err = planFile.Close()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	module := testModulePath(t)
 
@@ -44,10 +44,16 @@ func plan(t *testing.T) string {
 	return planPath
 }
 
-func TestPlan(t *testing.T) {
+func TestMissingPlan(t *testing.T) {
+	_, err := getPlan("missing-file")
+	assert.Error(t, err)
+}
+
+func TestSimplePlan(t *testing.T) {
 	initModule(t)
 
-	planPath := plan(t)
-	_, err := getPlan(planPath)
-	assert.Nil(t, err)
+	planPath := generatePlan(t)
+	plan, err := getPlan(planPath)
+	assert.NoError(t, err)
+	assert.Len(t, plan.Diff.Modules, 1)
 }
