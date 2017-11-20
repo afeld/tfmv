@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/hashicorp/terraform/terraform"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,26 +45,26 @@ func generatePlan(t *testing.T) string {
 	return planPath
 }
 
+func getTestPlan(t *testing.T) *terraform.Plan {
+	initModule(t)
+	planPath := generatePlan(t)
+	plan, err := getPlan(planPath)
+	assert.NoError(t, err)
+	return plan
+}
+
 func TestMissingPlan(t *testing.T) {
 	_, err := getPlan("missing-file")
 	assert.Error(t, err)
 }
 
 func TestSimplePlan(t *testing.T) {
-	initModule(t)
-	planPath := generatePlan(t)
-
-	plan, err := getPlan(planPath)
-
-	assert.NoError(t, err)
+	plan := getTestPlan(t)
 	assert.Len(t, plan.Diff.Modules, 1)
 }
 
 func TestChangesByType(t *testing.T) {
-	initModule(t)
-	planPath := generatePlan(t)
-	plan, err := getPlan(planPath)
-	assert.NoError(t, err)
+	plan := getTestPlan(t)
 
 	changesByType := getChangesByType(plan)
 
