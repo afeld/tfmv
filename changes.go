@@ -7,41 +7,24 @@ import (
 
 type ResourceType string
 
-type ResourceDiff struct {
-	Addr terraform.ResourceAddress
-	Diff tfmt.InstanceDiff
-}
-
-func (r ResourceDiff) ChangeType() terraform.DiffChangeType {
-	return r.Diff.Action
-}
-
-func (r ResourceDiff) Type() ResourceType {
-	return ResourceType(r.Addr.Type)
-}
-
-func (r ResourceDiff) String() string {
-	return r.Addr.String()
-}
-
 type ResourceChanges struct {
-	Created   []ResourceDiff
-	Destroyed []ResourceDiff
+	Created   []tfmt.InstanceDiff
+	Destroyed []tfmt.InstanceDiff
 }
 
-func (c *ResourceChanges) Add(diff ResourceDiff) {
-	cType := diff.ChangeType()
-	if cType == terraform.DiffCreate {
+func (c *ResourceChanges) Add(diff tfmt.InstanceDiff) {
+	switch diff.Action {
+	case terraform.DiffCreate:
 		c.Created = append(c.Created, diff)
-	} else if cType == terraform.DiffDestroy {
+	case terraform.DiffDestroy:
 		c.Destroyed = append(c.Destroyed, diff)
 	}
 }
 
 type ChangesByType map[ResourceType]*ResourceChanges
 
-func (ct ChangesByType) Add(diff ResourceDiff) {
-	rType := diff.Type()
+func (ct ChangesByType) Add(diff tfmt.InstanceDiff) {
+	rType := ResourceType(diff.Addr.Type)
 	if ct[rType] == nil {
 		ct[rType] = &ResourceChanges{}
 	}

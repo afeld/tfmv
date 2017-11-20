@@ -183,10 +183,10 @@ func TestChangesAfterApplyAndMove(t *testing.T) {
 	changes := changesByType.Get("tls_private_key")
 
 	assert.Len(t, changes.Created, 1)
-	assert.Equal(t, "module.empty_mod.tls_private_key.example", changes.Created[0].String())
+	assert.Equal(t, "module.empty_mod.tls_private_key.example", changes.Created[0].Addr.String())
 
 	assert.Len(t, changes.Destroyed, 1)
-	assert.Equal(t, "tls_private_key.example", changes.Destroyed[0].String())
+	assert.Equal(t, "tls_private_key.example", changes.Destroyed[0].Addr.String())
 }
 
 func TestMoveStatements_Simple(t *testing.T) {

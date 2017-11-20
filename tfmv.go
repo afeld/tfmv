@@ -32,9 +32,7 @@ func getChangesByType(plan *tfmt.Plan) (ChangesByType, error) {
 	// inspired by
 	// https://github.com/palantir/tfjson/blob/master/tfjson.go
 	for _, resource := range plan.Resources {
-		// TODO refactor to not pass Addr separately
-		diff := ResourceDiff{Addr: *resource.Addr, Diff: *resource}
-		changesByType.Add(diff)
+		changesByType.Add(*resource)
 	}
 
 	return changesByType, nil
@@ -65,20 +63,14 @@ func getMoveStatements(plan *tfmt.Plan) ([]string, error) {
 			deletion := changes.Destroyed[i]
 
 			// sanity checks
-			if err := checkIfObjectsMatch("ResourceDiffs", creation, deletion); err != nil {
-				return moves, err
-			}
 			if err := checkIfObjectsMatch("Addrs", creation.Addr, deletion.Addr); err != nil {
 				return moves, err
 			}
-			if err := checkIfObjectsMatch("Diffs", creation.Diff, deletion.Diff); err != nil {
-				return moves, err
-			}
-			if err := checkIfObjectsMatch("Strings", creation.String(), deletion.String()); err != nil {
+			if err := checkIfObjectsMatch("InstanceDiffs", creation, deletion); err != nil {
 				return moves, err
 			}
 
-			moves = append(moves, "terraform state mv "+deletion.String()+" "+creation.String())
+			moves = append(moves, "terraform state mv "+deletion.Addr.String()+" "+creation.Addr.String())
 		}
 	}
 
