@@ -1,3 +1,3 @@
-module "simple_mod" {
+module "empty_mod" {
   source = "../empty"
 }

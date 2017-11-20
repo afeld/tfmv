@@ -5,38 +5,41 @@ import (
 	"log"
 	"os"
 
+	tfmt "github.com/hashicorp/terraform/command/format"
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func getPlan(file string) (*terraform.Plan, error) {
+func getPlan(file string) (*tfmt.Plan, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	return terraform.ReadPlan(f)
+	// Terraform has two Plan types, for some reason. `terraform.Plan` doesn't include the module in the address, so only use it for reading from the plan file, then convert it to the other one.
+	plan, err := terraform.ReadPlan(f)
+	if err != nil {
+		return nil, err
+	}
+	fmtPlan := tfmt.NewPlan(plan)
+	return fmtPlan, nil
 }
 
-func getChangesByType(plan *terraform.Plan) (ChangesByType, error) {
+func getChangesByType(plan *tfmt.Plan) (ChangesByType, error) {
 	changesByType := ChangesByType{}
 
+	// inspired by
 	// https://github.com/palantir/tfjson/blob/master/tfjson.go
-	for _, module := range plan.Diff.Modules {
-		for path, resource := range module.Resources {
-			addr, err := terraform.ParseResourceAddress(path)
-			if err != nil {
-				return changesByType, err
-			}
-			rType := ResourceType(addr.Type)
-			changesByType.Add(rType, resource)
-		}
+	for _, resource := range plan.Resources {
+		// TODO refactor to not pass Addr separately
+		diff := ResourceDiff{Addr: *resource.Addr, Diff: *resource}
+		changesByType.Add(diff)
 	}
 
 	return changesByType, nil
 }
 
-func getMoveStatements(plan *terraform.Plan) ([]string, error) {
+func getMoveStatements(plan *tfmt.Plan) ([]string, error) {
 	// TODO implement
 	return []string{}, nil
 }
@@ -48,14 +51,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	fmt.Println(plan.Diff.Modules, "\n----------\n")
-
-	changesByType, err := getChangesByType(plan)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(changesByType)
 
 	moves, err := getMoveStatements(plan)
 	if err != nil {

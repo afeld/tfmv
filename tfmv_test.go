@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hashicorp/terraform/terraform"
+	tfmt "github.com/hashicorp/terraform/command/format"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,7 +82,7 @@ func generatePlan(t *testing.T, modulePath string) string {
 	return planPath
 }
 
-func getTestPlan(t *testing.T, modulePath string) *terraform.Plan {
+func getTestPlan(t *testing.T, modulePath string) *tfmt.Plan {
 	initModule(t, modulePath)
 	planPath := generatePlan(t, modulePath)
 	plan, err := getPlan(planPath)
@@ -116,14 +116,13 @@ func TestMissingPlan(t *testing.T) {
 
 func TestEmptyPlan(t *testing.T) {
 	plan := getTestPlan(t, "test/empty")
-	assert.True(t, plan.Diff.Empty())
-	assert.Len(t, plan.Diff.Modules, 1)
+	assert.True(t, plan.Empty())
 }
 
 func TestSimplePlan(t *testing.T) {
 	plan := getTestPlan(t, "test/simple")
-	assert.False(t, plan.Diff.Empty())
-	assert.Len(t, plan.Diff.Modules, 1)
+	assert.False(t, plan.Empty())
+	assert.Len(t, plan.Resources, 1)
 }
 
 func TestChangesByType_Simple(t *testing.T) {
@@ -160,6 +159,7 @@ func TestChangesByType_Multi(t *testing.T) {
 
 func TestChangesAfterApplyAndMove(t *testing.T) {
 	rootModule := "test/module_ref/"
+	initModule(t, rootModule)
 	mustRun(t, "terraform", "apply", "-auto-approve", rootModule)
 
 	filename := "tls.tf"
@@ -181,8 +181,12 @@ func TestChangesAfterApplyAndMove(t *testing.T) {
 	assert.Equal(t, []ResourceType{"tls_private_key"}, types)
 
 	changes := changesByType.Get("tls_private_key")
+
 	assert.Len(t, changes.Created, 1)
+	assert.Equal(t, "module.empty_mod.tls_private_key.example", changes.Created[0].String())
+
 	assert.Len(t, changes.Destroyed, 1)
+	assert.Equal(t, "tls_private_key.example", changes.Destroyed[0].String())
 }
 
 func TestMoveStatements_Simple(t *testing.T) {
@@ -210,5 +214,6 @@ func TestMoveStatements_ApplyAndMove(t *testing.T) {
 	plan := getTestPlan(t, rootModule)
 	moves, err := getMoveStatements(plan)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"terraform state mv tls_private_key.example module.empty.tls_private_key.example"}, moves)
+	expected := []string{"terraform state mv tls_private_key.example module.empty_mod.tls_private_key.example"}
+	assert.Equal(t, expected, moves)
 }

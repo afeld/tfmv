@@ -1,15 +1,35 @@
 package main
 
-import "github.com/hashicorp/terraform/terraform"
+import (
+	tfmt "github.com/hashicorp/terraform/command/format"
+	"github.com/hashicorp/terraform/terraform"
+)
 
 type ResourceType string
 
-type ResourceChanges struct {
-	Created   []*terraform.InstanceDiff
-	Destroyed []*terraform.InstanceDiff
+type ResourceDiff struct {
+	Addr terraform.ResourceAddress
+	Diff tfmt.InstanceDiff
 }
 
-func (c *ResourceChanges) Add(diff *terraform.InstanceDiff) {
+func (r ResourceDiff) ChangeType() terraform.DiffChangeType {
+	return r.Diff.Action
+}
+
+func (r ResourceDiff) Type() ResourceType {
+	return ResourceType(r.Addr.Type)
+}
+
+func (r ResourceDiff) String() string {
+	return r.Addr.String()
+}
+
+type ResourceChanges struct {
+	Created   []ResourceDiff
+	Destroyed []ResourceDiff
+}
+
+func (c *ResourceChanges) Add(diff ResourceDiff) {
 	cType := diff.ChangeType()
 	if cType == terraform.DiffCreate {
 		c.Created = append(c.Created, diff)
@@ -20,12 +40,13 @@ func (c *ResourceChanges) Add(diff *terraform.InstanceDiff) {
 
 type ChangesByType map[ResourceType]*ResourceChanges
 
-func (ct ChangesByType) Add(rType ResourceType, resource *terraform.InstanceDiff) {
+func (ct ChangesByType) Add(diff ResourceDiff) {
+	rType := diff.Type()
 	if ct[rType] == nil {
 		ct[rType] = &ResourceChanges{}
 	}
 	changes := ct[rType]
-	changes.Add(resource)
+	changes.Add(diff)
 }
 
 func (ct ChangesByType) Get(rType ResourceType) *ResourceChanges {

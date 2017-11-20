@@ -117,7 +117,7 @@
 
 [[projects]]
   name = "github.com/hashicorp/terraform"
-  packages = ["config","config/configschema","config/hcl2shim","config/module","dag","flatmap","helper/hilmapstructure","moduledeps","plugin/discovery","registry/regsrc","registry/response","svchost","svchost/auth","svchost/disco","terraform","tfdiags","version"]
+  packages = ["command/format","config","config/configschema","config/hcl2shim","config/module","dag","flatmap","helper/hilmapstructure","moduledeps","plugin/discovery","registry/regsrc","registry/response","svchost","svchost/auth","svchost/disco","terraform","tfdiags","version"]
   revision = "ec9d4f1d0f90e8ec5148f94b6d634eb542a4f0ce"
   version = "v0.11.0"
 
@@ -137,6 +137,12 @@
   name = "github.com/mitchellh/cli"
   packages = ["."]
   revision = "65fcae5817c8600da98ada9d7edf26dd1a84837b"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/colorstring"
+  packages = ["."]
+  revision = "8631ce90f28644f54aeedcb3e389a85174e067d1"
 
 [[projects]]
   branch = "master"
@@ -243,6 +249,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ac5d7b4f2bb08f84d72bf06261b7bb7defed627537c9d241428ce0ca2631910b"
+  inputs-digest = "7ebe3bdafb7131121802caf33f1c94047421c6fc1b57b4309ae45b8e05c9a9bc"
   solver-name = "gps-cdcl"
   solver-version = 1
