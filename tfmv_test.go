@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -9,6 +11,29 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/stretchr/testify/assert"
 )
+
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func removeFile(filename string) error {
+	path, err := filepath.Abs(filename)
+	if err != nil {
+		return err
+	}
+
+	if fileExists(path) {
+		err = os.Remove(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // https://github.com/palantir/tfjson/blob/57123411e29c8945cd8dc89b6237c8f6f31ddf6e/tfjson_test.go#L124-L132
 func mustRun(t *testing.T, name string, arg ...string) {
@@ -53,6 +78,27 @@ func getTestPlan(t *testing.T, modulePath string) *terraform.Plan {
 	return plan
 }
 
+func TestMain(m *testing.M) {
+	// clean up the generated state file before and after the test run
+	stateFile := "terraform.tfstate"
+
+	err := removeFile(stateFile)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	exitCode := m.Run()
+
+	err = removeFile(stateFile)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	os.Exit(exitCode)
+}
+
 func TestMissingPlan(t *testing.T) {
 	_, err := getPlan("missing-file")
 	assert.Error(t, err)
@@ -77,7 +123,7 @@ func TestChangesByType_Simple(t *testing.T) {
 	assert.NoError(t, err)
 
 	types := changesByType.GetTypes()
-	assert.Equal(t, types, []ResourceType{"local_file"})
+	assert.Equal(t, []ResourceType{"local_file"}, types)
 
 	changes := changesByType.Get("local_file")
 	assert.Len(t, changes.Created, 1)
@@ -102,16 +148,32 @@ func TestChangesByType_Multi(t *testing.T) {
 	assert.Len(t, changes.Destroyed, 0)
 }
 
-func TestChangesByType_ModuleRef(t *testing.T) {
-	plan := getTestPlan(t, "test/module_ref")
+func TestChangesAfterApplyAndMove(t *testing.T) {
+	rootModule := "test/module_ref/"
+	mustRun(t, "terraform", "apply", "-auto-approve", rootModule)
 
+	filename := "tls.tf"
+	src, err := filepath.Abs(rootModule + filename)
+	assert.NoError(t, err)
+	dest, err := filepath.Abs("test/empty/" + filename)
+	assert.NoError(t, err)
+	err = os.Rename(src, dest)
+	assert.NoError(t, err)
+
+	// move the file back
+	defer func() {
+		err = os.Rename(dest, src)
+		assert.NoError(t, err)
+	}()
+
+	plan := getTestPlan(t, rootModule)
 	changesByType, err := getChangesByType(plan)
 	assert.NoError(t, err)
 
 	types := changesByType.GetTypes()
-	assert.Equal(t, types, []ResourceType{"local_file"})
+	assert.Equal(t, []ResourceType{"tls_private_key"}, types)
 
-	changes := changesByType.Get("local_file")
+	changes := changesByType.Get("tls_private_key")
 	assert.Len(t, changes.Created, 1)
-	assert.Len(t, changes.Destroyed, 0)
+	assert.Len(t, changes.Destroyed, 1)
 }
