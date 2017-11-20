@@ -28,6 +28,15 @@ resource "aws_instance" "app" {
 
 the [resource address](https://www.terraform.io/docs/internals/resource-addressing.html) is different, and Terraform treats it as the old `resource` being deleted, and the new one being created. Why not reuse them? [`terraform state mv`](https://www.terraform.io/docs/commands/state/mv.html) allows you to update the addresses of resources by hand, but this can be tedious if you are moving more than a few resources.
 
+### Goals
+
+In order:
+
+1. Improve algorithm for resource matching.
+    * Currently it's just matching created resources with destroyed ones of the same type, in the order it comes across them.
+1. Gain enough confidence in its functionality that it can be used in deployment pipelines, where it's hard to do `state mv` by hand.
+1. Propose merging into Terraform core.
+
 ## Setup
 
 1. [Install Go 1.6+.](https://golang.org/doc/install)
