@@ -17,18 +17,16 @@ func getPlan(file string) (*terraform.Plan, error) {
 	return terraform.ReadPlan(f)
 }
 
-func getChangesByType(plan *terraform.Plan) map[string]*ResourceChanges {
-	changesByType := map[string]*ResourceChanges{}
+func getChangesByType(plan *terraform.Plan) ChangesByType {
+	changesByType := ChangesByType{}
 
 	// https://github.com/palantir/tfjson/blob/master/tfjson.go
 	for _, module := range plan.Diff.Modules {
 		fmt.Println(module.Path)
-		for rType, resource := range module.Resources {
-			if changesByType[rType] == nil {
-				changesByType[rType] = &ResourceChanges{}
-			}
-			changes := changesByType[rType]
-			changes.Add(resource)
+		for pathStr, resource := range module.Resources {
+			path := ResourcePath(pathStr)
+			rType := path.GetType()
+			changesByType.Add(rType, resource)
 		}
 	}
 

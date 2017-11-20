@@ -51,9 +51,24 @@ func TestMissingPlan(t *testing.T) {
 
 func TestSimplePlan(t *testing.T) {
 	initModule(t)
+	planPath := generatePlan(t)
 
+	plan, err := getPlan(planPath)
+
+	assert.NoError(t, err)
+	assert.Len(t, plan.Diff.Modules, 1)
+}
+
+func TestChangesByType(t *testing.T) {
+	initModule(t)
 	planPath := generatePlan(t)
 	plan, err := getPlan(planPath)
 	assert.NoError(t, err)
-	assert.Len(t, plan.Diff.Modules, 1)
+
+	changesByType := getChangesByType(plan)
+
+	assert.Equal(t, changesByType.GetTypes(), []ResourceType{"local_file"})
+	changes := changesByType.Get("local_file")
+	assert.Len(t, changes.Created, 1)
+	assert.Len(t, changes.Destroyed, 0)
 }
