@@ -101,3 +101,17 @@ func TestChangesByType_Multi(t *testing.T) {
 	assert.Len(t, changes.Created, 1)
 	assert.Len(t, changes.Destroyed, 0)
 }
+
+func TestChangesByType_ModuleRef(t *testing.T) {
+	plan := getTestPlan(t, "test/module_ref")
+
+	changesByType, err := getChangesByType(plan)
+	assert.NoError(t, err)
+
+	types := changesByType.GetTypes()
+	assert.Equal(t, types, []ResourceType{"local_file"})
+
+	changes := changesByType.Get("local_file")
+	assert.Len(t, changes.Created, 1)
+	assert.Len(t, changes.Destroyed, 0)
+}
