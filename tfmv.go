@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/hashicorp/terraform/terraform"
@@ -45,23 +46,20 @@ func main() {
 	planfile := "tfplan"
 	plan, err := getPlan(planfile)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(plan.Diff.Modules, "\n----------\n")
 
 	changesByType, err := getChangesByType(plan)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 	fmt.Println(changesByType)
 
 	moves, err := getMoveStatements(plan)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 	fmt.Println(moves)
 }
