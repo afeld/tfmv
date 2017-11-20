@@ -62,8 +62,8 @@ func getMoveStatements(plan *tfmt.Plan) ([]string, error) {
 			if i == len(changes.Destroyed) {
 				break
 			}
-
 			deletion := changes.Destroyed[i]
+
 			// sanity checks
 			if err := checkIfObjectsMatch("ResourceDiffs", creation, deletion); err != nil {
 				return moves, err
@@ -97,5 +97,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(moves)
+	for _, move := range moves {
+		fmt.Println(move)
+	}
 }
