@@ -60,3 +60,18 @@ the [resource address](https://www.terraform.io/docs/internals/resource-addressi
 
 * [Google Groups discussion](https://groups.google.com/forum/#!topic/terraform-tool/CE2ScmDBTIE)
 * [GitHub issue about resource equivalence maps](https://github.com/hashicorp/terraform/issues/9048)
+
+## Development
+
+1. [Install dep.](https://github.com/golang/dep#setup)
+1. Install the dependencies.
+
+    ```sh
+    dep ensure
+    ```
+
+1. Run tests.
+
+    ```sh
+    go test
+    ```
