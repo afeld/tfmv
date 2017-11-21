@@ -5,8 +5,14 @@ jobs:
       - image: golang:1-alpine
     working_directory: /go/src/github.com/afeld/tfmv
     steps:
-      - checkout
+      # get newer version of Terraform
+      # https://pkgs.alpinelinux.org/packages?name=terraform&branch=edge&repo=community
+      - run: echo http://dl-cdn.alpinelinux.org/alpine/edge/community >> /etc/apk/repositories
       - run: apk add --update-cache git terraform
+      - run: terraform version
+
       - run: go get -u github.com/golang/dep/cmd/dep
+
+      - checkout
       - run: dep ensure
       - run: go test -v ./...
