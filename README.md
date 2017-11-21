@@ -1,4 +1,4 @@
-# tfmv
+# tfmv [![CircleCI](https://circleci.com/gh/afeld/tfmv.svg?style=svg)](https://circleci.com/gh/afeld/tfmv)
 
 "Terraform Move", a tool to help with Terraform refactoring. The use case: Let's say you have a resource:
 
