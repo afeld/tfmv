@@ -1,0 +1,12 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: golang:1-alpine
+    working_directory: /go/src/github.com/afeld/tfmv
+    steps:
+      - checkout
+      - run: apk add --update-cache git terraform
+      - run: go get -u github.com/golang/dep/cmd/dep
+      - run: dep ensure
+      - run: go test -v ./...
