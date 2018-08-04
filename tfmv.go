@@ -8,6 +8,7 @@ import (
 
 	tfmt "github.com/hashicorp/terraform/command/format"
 	"github.com/hashicorp/terraform/terraform"
+	"flag"
 )
 
 func getPlan(file string) (fmtPlan *tfmt.Plan, err error) {
@@ -80,9 +81,10 @@ func getMoveStatements(plan *tfmt.Plan) ([]string, error) {
 }
 
 func main() {
-	// TODO parameterize
-	planfile := "tfplan"
-	plan, err := getPlan(planfile)
+	planfile := flag.String("plan-file", "tfplan", "name of the plan-file")
+	flag.Parse()
+
+	plan, err := getPlan(*planfile)
 	if err != nil {
 		log.Fatalln(err)
 	}
