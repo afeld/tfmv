@@ -137,12 +137,12 @@ func getMoveStatements(plan *tfmt.Plan, mode string) ([]string, error) {
 }
 
 func main() {
-	// TODO parameterize
+  planfile := flag.String("plan-file", "tfplan", "name of the plan-file")
 	mode := flag.String("mode", "first-matching", "mode to use when matching resources to each other. Can be first-matching or same-name")
 
 	flag.Parse()
-	planfile := "tfplan"
-	plan, err := getPlan(planfile)
+
+  plan, err := getPlan(*planfile)
 	if err != nil {
 		log.Fatalln(err)
 	}
