@@ -34,7 +34,7 @@ the [resource address](https://www.terraform.io/docs/internals/resource-addressi
 In order:
 
 1. Improve algorithm for resource matching.
-    * Currently it's just matching created resources with destroyed ones of the same type, in the order it comes across them. It could be better at guessing created/destroyed resources that are likely meant to be the same.
+   - Currently it's just matching created resources with destroyed ones of the same type, in the order it comes across them. It could be better at guessing created/destroyed resources that are likely meant to be the same.
 1. Gain enough confidence in its functionality that it can be used in deployment pipelines, where it's hard to do `state mv` by hand.
 1. Propose merging into Terraform core.
 
@@ -43,45 +43,46 @@ In order:
 1. [Install Go 1.6+.](https://golang.org/doc/install)
 1. Install the package.
 
-    ```sh
-    go get github.com/afeld/tfmv
-    ```
+   ```sh
+   go get github.com/afeld/tfmv
+   ```
 
 ## Usage
 
 1. Create a plan.
 
-    ```sh
-    cd <your module>
-    terraform plan -out=tfplan
-    ```
+   ```sh
+   cd <your module>
+   terraform plan -out=tfplan
+   ```
 
 1. Run the executable. It will compute `state mv` commands to efficiently reuse resources.
 
-    ```
-    $ tfmv
-    terraform state mv aws_instance.my_instance module.shared.aws_instance.my_instance
-    ...
-    ```
+   ```
+   $ tfmv
+   terraform state mv aws_instance.my_instance module.shared.aws_instance.my_instance
+   ...
+   ```
 
 1. After double-checking the output, you can run the commands to avoid deleting and recreating resources unnecessarily.
 
 ## See also
 
-* [Google Groups discussion](https://groups.google.com/forum/#!topic/terraform-tool/CE2ScmDBTIE)
-* [GitHub issue about resource equivalence maps](https://github.com/hashicorp/terraform/issues/9048)
+- [Google Groups discussion](https://groups.google.com/forum/#!topic/terraform-tool/CE2ScmDBTIE)
+- [GitHub issue about resource equivalence maps](https://github.com/hashicorp/terraform/issues/9048)
 
 ## Development
 
-1. [Install dep.](https://github.com/golang/dep#setup)
+1. Install Terraform.
+1. [Install dep.](https://golang.github.io/dep/docs/installation.html)
 1. Install the dependencies.
 
-    ```sh
-    dep ensure
-    ```
+   ```sh
+   dep ensure
+   ```
 
 1. Run tests.
 
-    ```sh
-    go test
-    ```
+   ```sh
+   go test
+   ```
