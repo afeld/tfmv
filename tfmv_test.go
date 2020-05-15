@@ -189,14 +189,27 @@ func TestChangesAfterApplyAndMove(t *testing.T) {
 	assert.Equal(t, "tls_private_key.example", changes.Destroyed[0].Addr.String())
 }
 
-func TestMoveStatements_Simple(t *testing.T) {
+func TestMoveStatements_ShouldFailForUnknownMatchMode(t *testing.T) {
 	plan := getTestPlan(t, "test/simple")
-	moves, err := getMoveStatements(plan)
+	_, err := getMoveStatements(plan, "some-unkwnown-mode")
+	assert.Error(t, err, "unknown match-mode")
+}
+
+func TestMoveStatements_SimpleFirstMatching(t *testing.T) {
+	plan := getTestPlan(t, "test/simple")
+	moves, err := getMoveStatements(plan, MatchModeFirstMatching)
 	assert.NoError(t, err)
 	assert.Empty(t, moves)
 }
 
-func TestMoveStatements_ApplyAndMove(t *testing.T) {
+func TestMoveStatements_SimpleSameName(t *testing.T) {
+	plan := getTestPlan(t, "test/simple")
+	moves, err := getMoveStatements(plan, MatchModeSameName)
+	assert.NoError(t, err)
+	assert.Empty(t, moves)
+}
+
+func TestMoveStatements_ApplyAndMoveWithFirstMatchingStrategy(t *testing.T) {
 	rootModule := "test/module_ref/"
 	mustRun(t, "terraform", "apply", "-auto-approve", rootModule)
 
@@ -212,8 +225,57 @@ func TestMoveStatements_ApplyAndMove(t *testing.T) {
 	}()
 
 	plan := getTestPlan(t, rootModule)
-	moves, err := getMoveStatements(plan)
+	moves, err := getMoveStatements(plan, MatchModeFirstMatching)
 	assert.NoError(t, err)
 	expected := []string{"terraform state mv tls_private_key.example module.empty_mod.tls_private_key.example"}
+	assert.Equal(t, expected, moves)
+}
+
+func TestMoveStatements_ApplyAndMoveWithSameNameStrategy(t *testing.T) {
+	rootModule := "test/module_ref/"
+	mustRun(t, "terraform", "apply", "-auto-approve", rootModule)
+
+	filename := "tls.tf"
+	destModule := "test/empty/"
+	err := moveFile(filename, rootModule, destModule)
+	assert.NoError(t, err)
+
+	defer func() {
+		// move the file back
+		err = moveFile(filename, destModule, rootModule)
+		assert.NoError(t, err)
+	}()
+
+	plan := getTestPlan(t, rootModule)
+	moves, err := getMoveStatements(plan, MatchModeSameName)
+	assert.NoError(t, err)
+	expected := []string{"terraform state mv tls_private_key.example module.empty_mod.tls_private_key.example"}
+	assert.Equal(t, expected, moves)
+}
+
+func TestMoveStatements_ApplyAndMoveMultipleResourcesOfSameTypeWithSameNameStrategy(t *testing.T) {
+	rootModule := "test/module_ref/"
+	mustRun(t, "terraform", "apply", "-auto-approve", rootModule)
+
+	err := moveFile("tls.tf", rootModule, "test/empty/")
+	assert.NoError(t, err)
+	err = moveFile("other_tls.tf", rootModule, "test/another_empty/")
+	assert.NoError(t, err)
+
+	defer func() {
+		// move the file back
+		err = moveFile("tls.tf", "test/empty/", rootModule)
+		err = moveFile("other_tls.tf", "test/another_empty/", rootModule)
+		assert.NoError(t, err)
+	}()
+
+	plan := getTestPlan(t, rootModule)
+	moves, err := getMoveStatements(plan, MatchModeSameName)
+	assert.NoError(t, err)
+	expected := []string{
+		"terraform state mv tls_private_key.example2 module.another_empty_mod.tls_private_key.example2",
+		"terraform state mv tls_private_key.example3 module.another_empty_mod.tls_private_key.example3",
+		"terraform state mv tls_private_key.example module.empty_mod.tls_private_key.example",
+	}
 	assert.Equal(t, expected, moves)
 }
